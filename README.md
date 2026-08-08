@@ -55,7 +55,9 @@
 
 이 페이지 **오른쪽 위**의 초록색 **`Use this template`** → **`Create a new repository`** 를 누릅니다.
 
-![Use this template 버튼 — 저장소 페이지 오른쪽 위, Star 버튼 옆](docs/use-this-template.png)
+| 📷 아래는 화면을 찍은 **그림**입니다 — 눌러도 반응하지 않습니다 |
+| :--- |
+| <img src="docs/use-this-template.png" width="420" alt="저장소 오른쪽 위: Pin · Watch · Fork · Star 옆에 있는 초록색 Use this template 버튼"> |
 
 - 이름은 아무거나 (예: `my-telepulse`)
 - **반드시 `Private`(비공개)을 고릅니다.** 내가 어떤 방을 구독하는지가 이 저장소에 저장됩니다
