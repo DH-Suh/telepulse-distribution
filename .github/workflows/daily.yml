@@ -1,0 +1,60 @@
+# 6단계 — 매일 아침 브리핑 자동 실행
+#
+# 하루 3~5분 도는 작업이라 24시간 상주 서버가 필요 없다(SPEC 10절).
+# 비밀값은 저장소가 아니라 GitHub Secrets 에서 주입된다.
+
+name: 매일 아침 브리핑
+
+on:
+  schedule:
+    # cron 은 UTC 기준. 23:05 UTC = 익일 08:05 KST
+    # 정시(00분)는 전 세계 작업이 몰려 지연이 크다. 5분 비켜서 잡는다.
+    # 예약 실행은 수십 분 늦을 수 있으나, collect.py 가 '직전 08:00' 을 기준으로
+    # 구간을 고정하므로 늦어도 수집 내용은 동일하다 (SPEC 15절 (8)).
+    - cron: '5 23 * * *'
+  workflow_dispatch:        # 수동 실행 버튼
+
+# 동시 실행 방지 — 중복 브리핑과 중복 과금을 막는다
+concurrency:
+  group: daily-briefing
+  cancel-in-progress: false
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30     # 무한 대기로 분을 태우지 않도록
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 브리핑 생성 및 전송
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PYTHONUTF8: '1'          # 러너에서 한글 출력이 깨지지 않도록
+        run: python main.py
+
+      # 실패했을 때 원인을 보려면 중간 산출물이 필요하다.
+      # data/ 와 reports/ 는 저장소에 커밋되지 않으므로(개인정보) 아티팩트로만 남긴다.
+      - name: 산출물 보관 (7일)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: briefing-${{ github.run_number }}
+          path: |
+            data/*.jsonl
+            data/*.clusters.json
+            reports/*.md
+            reports/*.json
+          retention-days: 7
+          if-no-files-found: ignore

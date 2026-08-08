@@ -1,0 +1,32 @@
+# 절대 커밋 금지 — 계정 접근 권한
+.env
+*.session
+*.session-journal
+
+# 수집 원본 & 생성 리포트 (개인 정보 + 용량)
+data/*
+!data/.gitkeep
+reports/*
+!reports/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# 배포용 공개 저장소 작업 사본 — 자기 git 이력을 가진다.
+# 여기를 무시해야 부모 저장소가 중첩 저장소를 들여다보지 않는다.
+distribution/build/
+
+# 위저드를 개발 중에 돌리면 여기가 저장소 루트 노릇을 한다(setup/ 의 부모).
+# 재방문 경로를 시험할 때 생기는 작업 파일이고 방 이름이 들어 있다. 커밋하지 않는다.
+distribution/rooms.json
+
+# 설계 중 만든 목업 (superpowers 브레인스토밍 도구)
+.superpowers/
+
+# 기타
+.DS_Store
+*.bak

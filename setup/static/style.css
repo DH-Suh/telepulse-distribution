@@ -1,0 +1,228 @@
+/* Telepulse 설정 위저드 — 시각 규격은 ../../design.md 부록을 따른다.
+ *
+ * 이 파일은 prototype/ 의 <style> 블록 세 벌을 합친 것이다. 처음부터 다시 그리지 않았다.
+ * 값(색·크기·그림자)은 한 글자도 바꾸지 않았고, 아래 셋만 조정했다.
+ *   - 캔버스를 --ceramic 이 아니라 --neutral-warm 으로 통일 (design.md: 순백/차가운 배경 금지)
+ *   - .marker / .screen / .flow 는 옮기지 않음 — 프로토타입 검토용 액자이지 실제 화면이 아니다
+ *   - 단계 전환 규칙(main > section)을 새로 추가
+ *
+ * 규율: 버튼은 예외 없이 50px 풀필 + scale(.95) 액티브. 그라디언트 금지.
+ * 골드(#cba258)를 쓰지 않는다 — 원 시스템에서 Rewards 의례 전용이며 여기엔 대응 맥락이 없다.
+ */
+
+:root{
+  --sb-green:#006241; --green-accent:#00754A; --house-green:#1E3932; --green-uplift:#2b5148;
+  --green-light:#d4e9e2; --neutral-warm:#f2f0eb; --ceramic:#edebe9; --neutral-cool:#f9f9f9;
+  --white:#fff; --ink:rgba(0,0,0,.87); --ink-soft:rgba(0,0,0,.58); --ink-faint:rgba(0,0,0,.38);
+  --input-border:#d6dbde; --hairline:#e7e7e7; --red:#c82014;
+  --card-shadow:0 0 .5px 0 rgba(0,0,0,.14), 0 1px 1px 0 rgba(0,0,0,.24);
+  --nav-shadow:0 1px 3px rgba(0,0,0,.1), 0 2px 2px rgba(0,0,0,.06), 0 0 2px rgba(0,0,0,.07);
+  --sans:Inter,"Malgun Gothic","맑은 고딕",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+/* 한글은 자폭이 넓어 라틴 기준 음수 트래킹이 답답해 보인다. 본문 -.005em,
+   숫자·영문 라벨만 -.01em 유지 (design.md 부록) */
+body{margin:0;background:var(--neutral-warm);font-family:var(--sans);
+     color:var(--ink);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.num{letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+
+/* hidden 속성이 항상 이기게 한다.
+   브라우저 기본 스타일의 [hidden]{display:none} 은 이 파일의 어떤 규칙보다도 약하다.
+   그래서 .btns{display:flex} 같은 규칙 하나가 hidden 을 조용히 무력화한다 —
+   실제로 저장 성공 화면에 '다시 시도' 버튼이 떠 있었다. */
+[hidden]{display:none !important}
+
+/* ── 상단 바 · 진행 점 ── */
+header{background:var(--white);box-shadow:var(--nav-shadow);position:sticky;top:0;z-index:5}
+.nav{max-width:720px;margin:0 auto;height:64px;display:flex;align-items:center;
+     justify-content:space-between;padding:0 24px}
+.mark{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;
+      color:var(--sb-green);letter-spacing:-.01em}
+.mark .dot{width:24px;height:24px;border-radius:50%;background:var(--green-accent);
+           display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700}
+.steps{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink-soft)}
+.steps b{color:var(--sb-green);font-weight:600}
+
+.track{max-width:720px;margin:0 auto;padding:20px 24px 0;display:flex;gap:8px}
+.track i{flex:1;height:3px;border-radius:2px;background:rgba(0,0,0,.1)}
+.track i.on{background:var(--green-accent)}
+
+/* ── 단계 전환 — 한 번에 한 패널만 보인다 ── */
+main{max-width:720px;margin:0 auto;padding:20px 24px 96px}
+main > section{display:none}
+main > section.live{display:block}
+
+h1{font-size:24px;line-height:36px;font-weight:600;color:var(--sb-green);
+   letter-spacing:-.01em;margin:8px 0 6px}
+.lede{font-size:16px;line-height:1.6;color:var(--ink-soft);margin:0 0 24px}
+
+/* ── 카드 · 밴드 ── */
+.card{background:var(--white);border-radius:12px;box-shadow:var(--card-shadow);
+      padding:20px 22px;margin-bottom:14px}
+.band{background:var(--house-green);border-radius:12px;padding:18px 22px;color:#fff;
+      box-shadow:var(--card-shadow);margin-bottom:14px}
+.band p{margin:0;font-size:14px;line-height:1.6;color:rgba(255,255,255,.7)}
+.band p b{color:#fff;font-weight:600}
+.band h3{margin:0 0 8px;font-size:16px;font-weight:600;letter-spacing:-.01em}
+
+/* 비용 밴드 — 미터는 흰색 반투명 바. 한도 초과 경고만 Red (design.md 부록) */
+.band-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.band-label{font-size:13px;color:rgba(255,255,255,.7);letter-spacing:-.005em;margin-bottom:3px}
+.band-sub{font-size:15px;color:rgba(255,255,255,.7)}
+.band-cost{font-size:28px;font-weight:600;letter-spacing:-.01em;line-height:1.1;white-space:nowrap}
+.meter{height:7px;border-radius:4px;background:rgba(255,255,255,.18);margin-top:16px;overflow:hidden}
+.meter span{display:block;height:100%;width:0;background:rgba(255,255,255,.82);border-radius:4px;
+            transition:width .2s ease}
+.band-note{font-size:13px;color:rgba(255,255,255,.7);margin-top:12px;line-height:1.5}
+
+.sectitle{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--hairline)}
+.sectitle h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.sectitle small{font-size:13px;color:var(--ink-soft)}
+
+/* ── 입력 필드 ── */
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+.flabel{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;display:block}
+.fin{width:100%;height:46px;border:1px solid var(--input-border);border-radius:4px;
+  background:var(--white);padding:0 14px;font:400 16px/1 var(--sans);color:var(--ink);
+  letter-spacing:-.005em}
+.fin::placeholder{color:var(--ink-faint)}
+.fin:focus{outline:none;border-color:var(--green-accent);box-shadow:0 0 0 1px var(--green-accent)}
+.fin.ok{background:hsl(160 32% 87% / .33);border-color:var(--green-accent)}
+.fin.bad{background:hsl(4 82% 43% / .05);border-color:var(--red)}
+.hint{font-size:13px;color:var(--ink-soft);margin-top:6px;line-height:1.55}
+.hint a{color:var(--green-accent);font-weight:600;text-decoration:underline}
+.err{font-size:13px;color:var(--red);margin-top:6px;font-weight:600}
+.okmsg{font-size:13px;color:var(--green-accent);margin-top:6px;font-weight:600}
+
+/* 인증코드 5칸 */
+.code{display:flex;gap:8px}
+.code input{width:52px;height:60px;text-align:center;border:1px solid var(--input-border);
+  border-radius:4px;font:600 24px/1 var(--sans);background:var(--white);color:var(--ink)}
+.code input:focus{outline:none;border-color:var(--green-accent);
+  box-shadow:0 0 0 1px var(--green-accent)}
+
+/* ── 인라인 확장 안내 (아코디언) ── */
+.exp{border:1px solid var(--input-border);border-radius:8px;overflow:hidden;
+     background:var(--neutral-cool);margin-top:4px}
+.exp-h{display:flex;align-items:center;gap:9px;padding:12px 14px;cursor:pointer;
+       font-size:14px;font-weight:600;color:var(--green-accent);user-select:none}
+.exp-h svg{transition:transform .3s cubic-bezier(.25,.46,.45,.94)}
+.exp.open .exp-h svg{transform:rotate(90deg)}
+.exp-b{display:none;padding:0 16px 16px;border-top:1px solid var(--hairline)}
+.exp.open .exp-b{display:block}
+.exp-b ol{margin:14px 0 0;padding-left:22px}
+.exp-b li{font-size:14px;line-height:1.65;margin-bottom:9px;color:var(--ink)}
+.exp-b li b{font-weight:600}
+.kbd{display:inline-block;background:var(--white);border:1px solid var(--input-border);
+  border-radius:4px;padding:1px 6px;font-size:13px;font-weight:600;letter-spacing:0}
+.warn{margin-top:14px;padding:12px 14px;border-radius:8px;background:hsl(4 82% 43% / .05);
+  border:1px solid rgba(200,32,20,.25);font-size:13px;line-height:1.6}
+.warn b{color:var(--red);font-weight:700}
+.openlink{display:inline-flex;align-items:center;gap:6px;margin-top:12px;
+  font-size:14px;font-weight:600;color:var(--green-accent);text-decoration:underline}
+
+/* ── 방 목록 ── */
+.tools{display:flex;gap:10px;margin-bottom:12px}
+.search{flex:1;position:relative}
+.search input{width:100%;height:44px;border:1px solid var(--input-border);border-radius:4px;
+   background:var(--white);padding:0 14px 0 40px;font:400 16px/1 var(--sans);
+   color:var(--ink);letter-spacing:-.005em}
+.search input::placeholder{color:var(--ink-faint)}
+.search input:focus{outline:none;border-color:var(--green-accent);box-shadow:0 0 0 1px var(--green-accent)}
+.search svg{position:absolute;left:14px;top:14px;stroke:var(--ink-faint)}
+.sort{height:44px;border:1px solid var(--input-border);border-radius:4px;background:var(--white);
+      padding:0 14px;font:400 14px/1 var(--sans);color:var(--ink);letter-spacing:-.005em;cursor:pointer}
+
+.list{background:var(--white);border-radius:12px;box-shadow:var(--card-shadow);overflow:hidden}
+.list-head{display:flex;align-items:center;gap:12px;padding:12px 18px;
+           border-bottom:1px solid var(--hairline);font-size:12px;color:var(--ink-soft)}
+.list-head .grow{flex:1}
+.w-msg{width:70px;text-align:right}
+.w-chars{width:76px;text-align:right}
+.w-cost{width:88px;text-align:right}
+
+/* 행 전체가 클릭 대상. 최소 52px — 터치 타깃 44px 이상 (design.md 부록) */
+.row{display:flex;align-items:center;gap:12px;padding:0 18px;min-height:52px;
+     border-bottom:1px solid var(--hairline);cursor:pointer;transition:background .15s ease}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--neutral-cool)}
+.row.on{background:hsl(160 32% 87% / .33)}
+
+.box{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--input-border);
+     background:var(--white);flex:0 0 auto;display:grid;place-items:center;
+     transition:.3s cubic-bezier(.32,2.32,.61,.27)}
+.row.on .box{background:var(--green-accent);border-color:var(--green-accent)}
+.box svg{opacity:0;transition:opacity .12s ease}
+.row.on .box svg{opacity:1}
+
+.name{flex:1;min-width:0;padding:8px 0}
+.name b{display:block;font-size:16px;font-weight:400;line-height:1.4;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.name small{font-size:13px;color:var(--ink-soft)}
+.tag{display:inline-block;font-size:11px;line-height:1;padding:4px 8px;border-radius:50px;
+     border:1px solid var(--input-border);color:var(--ink-soft);margin-left:6px;
+     vertical-align:1px;letter-spacing:0}
+.tag.new{border-color:var(--green-accent);color:var(--green-accent)}
+/* 숫자 세 열은 크기를 반드시 같게 둔다. 크기가 다르면 한 열만 떠 보인다.
+   위계는 색으로만 준다 — 앞의 둘은 근거(옅게), 마지막은 결과(진하게). */
+.msg,.chars,.cost{font-size:14px;text-align:right}
+.msg{width:70px;color:var(--ink-soft)}
+.chars{width:76px;color:var(--ink-soft)}
+.cost{width:88px}
+.row.on .cost{font-weight:600}
+.more{padding:14px 18px;font-size:13px;color:var(--ink-soft);text-align:center}
+
+/* ── 저장 진행 체크리스트 ── */
+.steplist{list-style:none;margin:0;padding:0}
+.steplist li{display:flex;align-items:center;gap:12px;padding:12px 0;
+  border-bottom:1px solid var(--hairline);font-size:15px}
+.steplist li:last-child{border-bottom:0}
+.ic{width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center}
+.ic.done{background:var(--green-accent)}
+.ic.run{border:2px solid var(--green-accent);border-right-color:transparent;animation:spin .8s linear infinite}
+.ic.wait{border:1.5px solid var(--input-border)}
+.ic.fail{background:var(--red)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steplist .lbl{flex:1}
+.steplist .sub{font-size:13px;color:var(--ink-soft);display:block;margin-top:2px}
+
+/* ── 완료 ── */
+.done-hero{text-align:center;padding:6px 0 2px}
+.done-hero .big{width:64px;height:64px;border-radius:50%;background:var(--green-accent);
+  display:grid;place-items:center;margin:0 auto 16px;
+  box-shadow:0 0 6px rgba(0,0,0,.24),0 8px 12px rgba(0,0,0,.14)}
+.kv{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--hairline);
+    font-size:15px}
+.kv:last-child{border-bottom:0}
+.kv span{color:var(--ink-soft)}
+.kv b{font-weight:600}
+
+/* ── 하단 액션 바 ──
+   기본은 흐름 안. 방 목록처럼 긴 화면은 .stick 을 더해 바닥에 붙인다.
+   position:fixed 가 아니라 sticky 라 레이아웃을 벗어나지 않는다. */
+.foot{display:flex;align-items:center;justify-content:space-between;gap:16px;
+      padding-top:20px;margin-top:6px;border-top:1px solid var(--ceramic)}
+.foot.stick{position:sticky;bottom:0;background:rgba(242,240,235,.94);
+            backdrop-filter:blur(8px);padding:14px 0;margin-top:0}
+.foot-note{font-size:13px;color:var(--ink-soft)}
+.btns{display:flex;gap:10px;flex-shrink:0}
+
+/* ── 버튼 — 예외 없이 50px 풀필 + scale(.95) 액티브 ── */
+button{font-family:var(--sans);letter-spacing:-.01em;cursor:pointer;border-radius:50px;
+       transition:all .2s ease}
+button:active{transform:scale(.95)}
+.ghost{background:transparent;border:1px solid var(--ink);color:var(--ink);
+       padding:11px 22px;font-size:14px;font-weight:600}
+.primary{background:var(--green-accent);border:1px solid var(--green-accent);color:#fff;
+         padding:12px 30px;font-size:16px;font-weight:600}
+.primary[disabled]{background:#b9c4bf;border-color:#b9c4bf;cursor:not-allowed}
+.outline{background:transparent;border:1.5px solid var(--green-accent);color:var(--green-accent);
+         padding:12px 26px;font-size:15px;font-weight:600}
+.onwhite{background:#fff;border:1px solid #fff;color:var(--green-accent);
+         padding:11px 24px;font-size:15px;font-weight:600}
+.ondark{background:transparent;border:1px solid #fff;color:#fff;
+        padding:11px 24px;font-size:15px;font-weight:600}
+.lnk{background:none;border:0;color:var(--green-accent);font-size:14px;font-weight:600;
+     padding:0;text-decoration:underline}

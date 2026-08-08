@@ -1,0 +1,21 @@
+{
+  "name": "Telepulse 설정",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "pip install --user -r requirements.txt",
+  "postAttachCommand": "python setup/server.py",
+  "forwardPorts": [8765],
+  "portsAttributes": {
+    "8765": {
+      "label": "Telepulse 설정",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": []
+    }
+  }
+}

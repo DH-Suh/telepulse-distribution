@@ -1,0 +1,6 @@
+telethon>=1.36        # 텔레그램 유저봇 (MTProto)
+openai>=1.50          # LLM 요약
+python-dotenv>=1.0    # .env 로딩
+rapidfuzz>=3.9        # 근사중복 클러스터링
+truststore>=0.9       # 회사망 SSL 검사 프록시 대응 (15절 참조)
+aiohttp>=3.9          # 설정 위저드 로컬 서버 (setup/) — 파이프라인은 쓰지 않는다
