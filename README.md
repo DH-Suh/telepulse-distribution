@@ -20,7 +20,9 @@
 | 3 | **해외 뉴스·글로벌 증시** — 국내 어느 업종에 어떻게 영향인지 |
 | 4 | **정리와 관찰 대상** — 그리고 과열·루머 경고 |
 
-<!-- 스크린샷 자리: 실제 브리핑을 캡처해 docs/sample.png 로 넣고 아래 한 줄의 주석을 푼다.
+<!-- 스크린샷 자리: 실제 브리핑을 캡처해 distribution/docs/sample.png 로 넣고,
+     release.py 의 INCLUDE 에 그 파일을 추가한 뒤 아래 한 줄의 주석을 푼다.
+     화이트리스트에 넣지 않으면 배포본에 파일이 없어 깨진 이미지가 뜬다.
      방 이름이 보이지 않게 가린 뒤 넣을 것. -->
 <!-- ![브리핑 예시](docs/sample.png) -->
 
@@ -51,7 +53,9 @@
 
 ### ① 이 저장소를 내 계정으로 복사합니다
 
-이 페이지 위쪽의 **`Use this template`** → **`Create a new repository`** 를 누릅니다.
+이 페이지 **오른쪽 위**의 초록색 **`Use this template`** → **`Create a new repository`** 를 누릅니다.
+
+![Use this template 버튼 — 저장소 페이지 오른쪽 위, Star 버튼 옆](docs/use-this-template.png)
 
 - 이름은 아무거나 (예: `my-telepulse`)
 - **반드시 `Private`(비공개)을 고릅니다.** 내가 어떤 방을 구독하는지가 이 저장소에 저장됩니다
