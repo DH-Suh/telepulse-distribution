@@ -11,10 +11,30 @@ on:
     # 정시(00분)는 전 세계 작업이 몰려 지연이 크다. 5분 비켜서 잡는다.
     # 예약 실행은 수십 분 늦을 수 있으나, collect.py 가 '직전 08:00' 을 기준으로
     # 구간을 고정하므로 늦어도 수집 내용은 동일하다 (SPEC 15절 (8)).
-    - cron: '5 23 * * *'
-  workflow_dispatch:        # 수동 실행 버튼
+    - cron: '5 23 * * *'      # 08:05 KST — 본 알람
 
-# 동시 실행 방지 — 중복 브리핑과 중복 과금을 막는다
+    # 예비 알람 2개.
+    # GitHub 은 부하가 높으면 schedule 이벤트를 늦게 보내는 정도가 아니라 **버린다**
+    # ("If the load is sufficiently high enough, some queued jobs may be dropped" — 공식 문서).
+    # 버려지면 실행이 아예 생성되지 않으므로 기록도 알림도 남지 않는다. 조용히 사라진다.
+    # 실측: 2026-08-27 322분 지연(GitHub 인시던트 중), 2026-08-28 유실 (SPEC 15절 (25)).
+    #
+    # 스케줄러를 더 좋은 것으로 바꿔서 고칠 수 있는 문제가 아니다(Railway 도 동일하게
+    # 백필하지 않고 알림도 없다). 재시도를 안전하게 만드는 것이 답이고,
+    # 그 '안전하게' 를 담당하는 것이 아래 '이미 나갔는지 확인' 스텝이다.
+    - cron: '25 0 * * *'      # 09:25 KST — 예비 1
+    - cron: '25 2 * * *'      # 11:25 KST — 예비 2
+
+  workflow_dispatch:        # 수동 실행 버튼
+    inputs:
+      force:
+        description: '이미 오늘 브리핑이 나갔어도 다시 실행 (약 800원 재과금됨)'
+        type: boolean
+        default: false
+
+# 동시 실행 방지 — 중복 브리핑과 중복 과금을 막는다.
+# 예비 알람이 본 알람과 겹쳐도 여기서 줄을 세우고, 앞선 실행이 끝난 뒤
+# 아래 가드가 '이미 나갔음' 을 보고 종료한다.
 concurrency:
   group: daily-briefing
   cancel-in-progress: false
@@ -24,18 +44,64 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30     # 무한 대기로 분을 태우지 않도록
 
+    # 가드가 이 워크플로의 실행 이력을 읽어야 한다. GITHUB_TOKEN 으로 충분하고
+    # PAT 는 필요 없다 — 외부에 열쇠를 주지 않는다는 뜻이다.
+    # ⚠️ permissions 를 명시하면 나열하지 않은 권한은 전부 none 이 된다.
+    #    actions/checkout 이 쓰는 contents: read 를 빠뜨리면 체크아웃이 실패한다.
+    permissions:
+      contents: read
+      actions: read
+
     steps:
+      # ── 예비 알람이 이미 나간 브리핑을 다시 보내지 않게 막는 유일한 장치 ──
+      #
+      # summarize.py 의 재과금 가드(reports/ 에 파일이 있으면 API 를 안 부름)는
+      # 여기서 안 걸린다. 러너의 reports/ 는 매번 비어 있기 때문이다.
+      #
+      # 경계는 collect.py:daily_window() 의 '창의 끝' 과 **반드시 같아야 한다** — 08:00 KST.
+      # 그 경계 이후에 도는 실행은 전부 같은 24시간 창을 보므로 같은 브리핑을 만든다.
+      # 따라서 "경계 이후에 성공한 실행이 하나라도 있다" == "이 브리핑은 이미 나갔다".
+      #
+      # KST = UTC+9 이므로 08:00 KST == 직전 23:00 UTC 다. 그래서 tz 데이터베이스를
+      # 쓰지 않고 UTC 산술만으로 계산한다. TZ=Asia/Seoul 은 zoneinfo 가 없는 환경
+      # (Windows Git Bash)에서 조용히 UTC 로 폴백해 경계를 하루 틀리게 만든다.
+      - name: 오늘 브리핑이 이미 나갔는지 확인
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "$FORCE" = "true" ]; then
+            echo "::notice::force=true — 가드를 건너뜁니다. 브리핑이 중복 전송되고 재과금됩니다."
+            exit 0
+          fi
+          d=$(date -u +%F)
+          if [ "$(date -u +%-H)" -lt 23 ]; then d=$(date -u -d "$d -1 day" +%F); fi
+          since="${d}T23:00:00Z"
+          echo "기준 경계: $since  (= 직전 08:00 KST · 수집 창의 끝)"
+          api="repos/$GITHUB_REPOSITORY/actions/workflows/daily.yml/runs?status=success&per_page=20"
+          n=$(gh api "$api" --jq "[.workflow_runs[] | select(.created_at >= \"$since\")] | length")
+          echo "그 이후 성공한 실행: ${n}건"
+          if [ "$n" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::오늘 브리핑은 이미 발송됐습니다. 이 실행은 여기서 종료합니다(비용 0원)."
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
 
       - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip != 'true'
         with:
           python-version: '3.12'
           cache: pip
 
       - name: 의존성 설치
+        if: steps.guard.outputs.skip != 'true'
         run: pip install -r requirements.txt
 
       - name: 브리핑 생성 및 전송
+        if: steps.guard.outputs.skip != 'true'
         env:
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
@@ -46,8 +112,13 @@ jobs:
 
       # 실패했을 때 원인을 보려면 중간 산출물이 필요하다.
       # data/ 와 reports/ 는 저장소에 커밋되지 않으므로(개인정보) 아티팩트로만 남긴다.
+      #
+      # ⚠️ continue-on-error 는 장식이 아니라 위 가드의 정확성을 지탱한다.
+      #    전송까지 다 끝난 뒤 이 스텝만 실패하면 run 이 failure 로 찍히고,
+      #    예비 알람이 "아직 안 나갔네" 하고 브리핑을 다시 보낸다 — 중복 전송 + 재과금.
       - name: 산출물 보관 (7일)
-        if: always()
+        if: always() && steps.guard.outputs.skip != 'true'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: briefing-${{ github.run_number }}
